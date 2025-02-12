@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Models;
 
 use Illuminate\Contracts\Auth\MustVerifyEmail;
@@ -10,7 +11,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class User extends Authenticatable implements JWTSubject
 {
-    use HasFactory, Notifiable ,SoftDeletes;
+    use HasFactory, Notifiable, SoftDeletes;
 
 
     /**s;
@@ -23,7 +24,7 @@ class User extends Authenticatable implements JWTSubject
         'name',
         'email',
         'role',
-     'password',
+        'password',
     ];
 
 
@@ -44,14 +45,14 @@ class User extends Authenticatable implements JWTSubject
      */
     protected $casts = [
         'email_verified_at' => 'datetime',
-          'password' => 'hashed',
+        'password' => 'hashed',
     ];
 
     /**
-    * Get the identifier that will be stored in the subject claim of the JWT.
-    *
-    * @return mixed
-    */
+     * Get the identifier that will be stored in the subject claim of the JWT.
+     *
+     * @return mixed
+     */
     public function getJWTIdentifier()
     {
         return $this->getKey();

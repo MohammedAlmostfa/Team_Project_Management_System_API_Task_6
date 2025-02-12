@@ -29,7 +29,6 @@ class TeamFormRequset extends FormRequest
             return [
                 'new_user_id' => 'required|exists:users,id',
                 'old_user_id' => 'required|integer|exists:project_user,user_id',
-                'role' => 'required|string',
             ];
         }
     }

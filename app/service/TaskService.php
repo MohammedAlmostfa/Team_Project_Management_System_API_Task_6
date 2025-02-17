@@ -2,12 +2,13 @@
 
 namespace App\Service;
 
-use App\Models\Project;
+use Exception;
 use App\Models\Task;
 use App\Models\User;
-use Exception;
-use Illuminate\Support\Facades\Auth;
+use App\Models\Project;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Auth;
+use App\Notifications\NewTaskNotification;
 
 class TaskService
 {
@@ -55,28 +56,28 @@ class TaskService
     {
         try {
 
-            // Create the new task
             $task = Task::create([
                 'title' => $data['title'],
                 'priority' => $data['priority'],
                 'user_id' => $data['user_id'],
+                'description' => $data['description'],
                 'project_id' => $data['project_id'],
                 'due_date' => $data['due_date'],
-
             ]);
-            //update the last_activity for manger
-            $project = $task->project;
 
+            // تحديث last_activity للمدير
+            $project = $task->project;
             $project->users()->updateExistingPivot(Auth::user()->id, ['last_activity' => now()]);
-            // Fetch the user with pivot data
+
+            // حساب ساعات المساهمة
             $user = $project->users()->wherePivot('user_id', Auth::user()->id)->first();
-            // Calculate contribution hours
             $contribution_hours = $user->updated_at->diffInHours($user->pivot->last_activity);
-            // Update contribution hours
+
+            // تحديث ساعات المساهمة
             $project->users()->updateExistingPivot($task->user_id, ['contribution_hours' => $contribution_hours]);
 
 
-            // Return success response
+
             return [
                 'message' => 'تم إنشاء المهمة بنجاح',
                 'data' => $task,
@@ -86,8 +87,8 @@ class TaskService
             Log::error('حدث خطأ أثناء إنشاء المهمة: ' . $e->getMessage());
 
             return [
-                'message' => 'حدث خطأ أثناء إنشاء المهمة: '. $e->getMessage() ,
-                'data' => [] ,
+                'message' => 'حدث خطأ أثناء إنشاء المهمة: ' . $e->getMessage(),
+                'data' => [],
                 'status' => 500,
             ];
         }
@@ -139,6 +140,8 @@ class TaskService
                     'user_id' => $data['user_id'] ?? $task->user_id,
                     'due_date' => $data['due_date'] ?? $task->due_date,
                 ]);
+
+
                 // devlopwe edait his task
             } elseif ($task->user_id == $authUser->id) {
                 // Update the task status

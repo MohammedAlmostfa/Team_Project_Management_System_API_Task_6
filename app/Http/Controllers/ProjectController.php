@@ -2,114 +2,93 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Requests\projectFormRequest;
-use App\Service\projectService;
-use GuzzleHttp\Psr7\Response;
+use App\Http\Requests\Project\ProjectFormRequestCreat;
+use App\Http\Requests\Project\ProjectFormRequestUpdate;
+use App\Http\Resources\ProjectResource;
+use App\Service\ProjectService;
 use Illuminate\Http\Request;
 
 class ProjectController extends Controller
 {
     protected $projectService;
 
-    public function __construct(projectService $projectService)
+    public function __construct(ProjectService $projectService)
     {
         $this->projectService = $projectService;
     }
-    //**________________________________________________________________________________________________
-    /**
-   *show all projects with tasks
-   * @param nothing
-   * @return response json(message,project data)
-   */
-    public function index(Request $request)
-    {
-        //  $validatedData = $request->validated();
-        $result = $this->projectService->showallProjects($request);
-        return Response()->json([
-            'message' => $result['message'],
-            'data' => $result['data'],
-        ], $result['status']);
-    }
-    //**________________________________________________________________________________________________
 
     /**
-     * create a new project
-     * @param projectFormRequest
-     * @return response json(message,project data)
+     * Show all projects with tasks
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
      */
-    public function store(projectFormRequest $request)
+    public function index(Request $request)
+    {
+        $result = $this->projectService->showallProjects($request);
+        return self::paginated($result['data'], ProjectResource::class, $result['message'], $result['status']);
+
+    }
+
+    /**
+     * Create a new project
+     * @param ProjectFormRequestCreat $request
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function store(ProjectFormRequestCreat $request)
     {
         $validatedData = $request->validated();
         $result = $this->projectService->createProject($validatedData);
-        return Response()->json([
-            'message' => $result['message'],
-            'data' => $result['data'],
-        ], $result['status']);
+        return $result['status'] === 200
+           ? self::success(new ProjectResource($result['data']), $result['message'], $result['status'])
+            : self::error(new ProjectResource($result['data']), $result['message'], $result['status']);
+
     }
-    //**________________________________________________________________________________________________
+
     /**
-     * show  project by id
-     * @param id(id of project)
-     * @return response json(message,project data)
+     * Show a project by ID
+     * @param string $id (ID of the project)
+     * @return \Illuminate\Http\JsonResponse
      */
     public function show(string $id)
     {
         $result = $this->projectService->showProject($id);
-        return Response()->json([
-            'message' => $result['message'],
-            'data' => $result['data'],
-        ], $result['status']);
+        return self::success(new ProjectResource($result['data']), $result['message'], $result['status']);
     }
-    //**________________________________________________________________________________________________
+
     /**
-      * update a  project
-      * @param projectFormRequest
-      * @parm id(id of project)
-      * @return response json(message)
-      */
-    public function update(projectFormRequest $request, string $id)
+     * Update a project
+     * @param ProjectFormRequestUpdate $request
+     * @param string $id (ID of the project)
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function update(ProjectFormRequestUpdate $request, string $id)
     {
         $validatedData = $request->validated();
         $result = $this->projectService->updateProject($validatedData, $id);
-        return Response()->json([
-            'message' => $result['message'],
-        ], $result['status']);
+        return $result['status'] === 200
+        ? self::success(null, $result['message'], $result['status'])
+            : self::error(null, $result['message'], $result['status']);
     }
-    //**________________________________________________________________________________________________
 
     /**
- * delet  project by id
- * @param id(id of project)
- * @return response json(message)
- */
-
+     * Delete a project by ID
+     * @param string $id (ID of the project)
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function destroy(string $id)
     {
-
-        $result = $this->projectService->deletProject($id);
-        return Response()->json([
-            'message' => $result['message'],
-        ], $result['status']);
+        $result = $this->projectService->deleteProject($id);
+        return self::success(null, $result['message'], $result['status']);
     }
 
-    //**________________________________________________________________________________________________
     /**
-          * show project relater to user
-
-
-          * @return response json(message,dtaa)
-          */
-
-    public function showproject()
+     * Show projects related to the authenticated user
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function showProjectUser()
     {
-        //create team
         $result = $this->projectService->showprojectUser();
-        // return  response
-        return response()->json([
-            'message' => $result['message'],
-             'data' => $result['data'],
-        ], $result['status']);
+        return self::paginated($result['data'], ProjectResource::class, $result['message'], $result['status']);
     }
-
 
 }

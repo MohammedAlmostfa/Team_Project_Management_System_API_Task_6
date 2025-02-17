@@ -52,7 +52,7 @@ class TaskFormRequset extends FormRequest
                 'priority' => 'nullable|string',
                 'project_id' => 'nullable|integer|exists:projects,id',
                 'due_date' => 'nullable|date|after:today',
-                'user_id' => ['nullable', 'integer', new CheckUser($this->route('id'), $this->method())],
+
             ];
         }
         // for show his task

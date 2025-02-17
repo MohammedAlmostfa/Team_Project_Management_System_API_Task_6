@@ -1,21 +1,22 @@
 <?php
 
 
-namespace App\service;
+namespace App\Service;
 
 use Exception;
 use App\Models\User;
 use App\Models\Project;
-use App\Policies\ProjectPolicy;
+use App\Jobs\SendTeamNotification;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Gate;
-use App\Notifications\NewTeamNotification;
-use App\Notifications\TeamDeletNotification;
+use Illuminate\Support\Facades\DB;
 
 class TeamService
 {
     public function createTeam(array $data, string $id): array
     {
+        DB::beginTransaction();
+
         try {
             $project = Project::find($id);
 
@@ -33,32 +34,35 @@ class TeamService
                 ];
             }
 
-            // إضافة المطورين
+            // Attach developers
             $developers = User::findMany($data['developers_ids']);
             $project->users()->attach($data['developers_ids'], ['role' => 'Developer']);
-            foreach ($developers as $developer) {
-                $developer->notify(new NewTeamNotification($project->name, 'Developer'));
-            }
 
-            // إضافة المدير
+            // Attach manager
             $manager = User::find($data['manager']);
             $project->users()->attach($data['manager'], ['role' => 'Manager']);
-            $manager->notify(new NewTeamNotification($project->name, 'Manager'));
 
-            // إضافة الفاحص
+            // Attach tester
             $tester = User::find($data['tester']);
             $project->users()->attach($data['tester'], ['role' => 'Tester']);
-            $tester->notify(new NewTeamNotification($project->name, 'Tester'));
 
-            // تحديث حالة المشروع
+            // Dispatch notifications
+            foreach ($project->users as $user) {
+                SendTeamNotification::dispatch($user->id, $project->name, $user->pivot->role, "create");
+            }
+
+            // Update project status
             $project->status = 1;
             $project->save();
+
+            DB::commit();
 
             return [
                 'message' => 'تم إنشاء الفريق',
                 'status' => 200,
             ];
         } catch (Exception $e) {
+            DB::rollBack();
             Log::error('حدث خطأ أثناء إنشاء الفريق: ' . $e->getMessage());
             return [
                 'message' => 'حدث خطأ أثناء إنشاء الفريق',
@@ -69,6 +73,8 @@ class TeamService
 
     public function updateTeam(array $data, string $id): array
     {
+        DB::beginTransaction();
+
         try {
             $project = Project::find($id);
 
@@ -79,7 +85,6 @@ class TeamService
                 ];
             }
 
-            // التحقق باستخدام الـ Policy
             if (Gate::denies('canUpdateTeam', $project)) {
                 return [
                     'message' => 'لم يتم تعيين فريق بعد',
@@ -87,29 +92,33 @@ class TeamService
                 ];
             }
 
-
+            // Find the old user and their role
             $oldUser = $project->users()->find($data['old_user_id']);
+            if (!$oldUser) {
+                return [
+                    'message' => 'المستخدم القديم غير موجود',
+                    'status' => 404,
+                ];
+            }
+
             $oldUserRole = $oldUser->pivot->role;
+
+            // Detach the old user and send delete notification
             $project->users()->detach($data['old_user_id']);
-            $oldUser->notify(new TeamDeletNotification($project->name));
+            SendTeamNotification::dispatch($data['old_user_id'], $project->name, $oldUserRole, "delete");
 
-
+            // Attach the new user and send create notification
             $project->users()->attach($data['new_user_id'], ['role' => $oldUserRole]);
-            $useradd=User::find($data['new_user_id']);
-            $useradd->notify(new NewTeamNotification($project->name, $oldUserRole));
+            SendTeamNotification::dispatch($data['new_user_id'], $project->name, $oldUserRole, "create");
 
-
-
-
-
-
-
+            DB::commit();
 
             return [
                 'message' => 'تمت عملية التحديث بنجاح',
                 'status' => 200,
             ];
         } catch (Exception $e) {
+            DB::rollBack();
             Log::error('حدث خطأ أثناء تحديث الفريق: ' . $e->getMessage());
             return [
                 'message' => 'حدث خطأ أثناء تحديث الفريق: ' . $e->getMessage(),
@@ -117,8 +126,11 @@ class TeamService
             ];
         }
     }
+
     public function deleteTeam(string $id): array
     {
+        DB::beginTransaction();
+
         try {
             $project = Project::find($id);
 
@@ -129,7 +141,6 @@ class TeamService
                 ];
             }
 
-            // التحقق باستخدام الـ Policy
             if (Gate::denies('canDeleteTeam', $project)) {
                 return [
                     'message' => 'لم يتم تعيين فريق بعد',
@@ -137,24 +148,28 @@ class TeamService
                 ];
             }
 
-            // الحصول على المستخدمين في الفريق
+            // Get users and their roles
             $users = $project->users;
 
-            // حذف الفريق وإرسال الإشعارات للمستخدمين
+            // Detach users and send delete notifications
             foreach ($users as $user) {
+                $role = $user->pivot->role;
                 $project->users()->detach($user->id);
-                $user->notify(new TeamDeletNotification($project->name));
+                SendTeamNotification::dispatch($user->id, $project->name, $role, "delete");
             }
 
-            // تحديث حالة المشروع
+            // Update project status
             $project->status = 0;
             $project->save();
+
+            DB::commit();
 
             return [
                 'message' => 'تم إلغاء الفريق',
                 'status' => 200,
             ];
         } catch (Exception $e) {
+            DB::rollBack();
             Log::error('حدث خطأ أثناء إلغاء الفريق: ' . $e->getMessage());
             return [
                 'message' => 'حدث خطأ أثناء إلغاء الفريق',
@@ -162,5 +177,4 @@ class TeamService
             ];
         }
     }
-
 }

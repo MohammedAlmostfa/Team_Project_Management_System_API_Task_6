@@ -11,212 +11,197 @@ class ProjectService
 {
 
     /**
-     * function  created to show all  projects
-     * @param nothing
-     * @return array(message,project data,status)
+     * Function created to show all projects
+     * @param array $data
+     * @return array(message, project data, status)
      */
     public function showallProjects($data)
     {
         try {
-            if($data['status']) {
-                //get all projects witg lastest and oldest tasks
-                $projects = Project::with('lastoftask', 'oldoftask')->status($data['status'])->get();
+            if ($data['status']) {
+                // Get all projects with latest and oldest tasks
+                $projects = Project::with('lastoftask', 'oldoftask')->status($data['status'])->paginate(10);
             } else {
-
-                $projects = Project::with('lastoftask', 'oldoftask')->get();
-
+                $projects = Project::with('lastoftask', 'oldoftask')->paginate(10);
             }
-            //return array(message,project data ,status)
+            // Return array(message, project data, status)
             return [
-                'message' => 'تمت عملية العرض بنجاح',
+                'message' => 'Projects retrieved successfully',
                 'data' => $projects,
                 'status' => 200,
             ];
         } catch (Exception $e) {
-            Log::error('حدث خطأ أثناء العرض المشاريع: ' . $e->getMessage());
-            //return array(message,project data ,status)
+            Log::error('Error while retrieving projects: ' . $e->getMessage());
+            // Return array(message, project data, status)
             return [
-                'message' => 'حدث خطأ أثناء العرض المشاريع',
-                'data' => 'لا يوحد ببيانات',
+                'message' => 'An error occurred while retrieving projects',
+                'data' => 'No data available',
                 'status' => 500,
             ];
         }
     }
-    //**________________________________________________________________________________________________
+
     /**
-     * function  created to creat new project
-     * @param data(data to inserted)
-     * @return array(message, project data,status)
+     * Function created to create a new project
+     * @param array $data (data to be inserted)
+     * @return array(message, project data, status)
      */
     public function createProject($data)
     {
         try {
-            // create project
+            // Create project
             $project = Project::create($data);
-            //return array(message, project data, status
+            // Return array(message, project data, status)
             return [
-                'message' => 'تم إنشاء المشروع بنجاح',
+                'message' => 'Project created successfully',
                 'data' => $project,
                 'status' => 200,
             ];
-            //exception
         } catch (Exception $e) {
-            Log::error('حدث خطأ أثناء إنشاء المشروع: ');
-            //return array(message, project data, status
+            Log::error('Error while creating project: ' . $e->getMessage());
+            // Return array(message, project data, status)
             return [
-                'message' => 'حدث خطأ أثناء إنشاء المشروع',
-                'data' => 'لا يوجد بيانات',
+                'message' => 'An error occurred while creating the project',
+                'data' => 'No data available',
                 'status' => 500,
             ];
         }
     }
-    //**________________________________________________________________________________________________
+
     /**
-     * function  created to update  project
-     * @param data(data to inserted)
-     * @param $id(id of project)
-     * @return array(message,status)
+     * Function created to update a project
+     * @param array $data (data to be updated)
+     * @param int $id (id of the project)
+     * @return array(message, status)
      */
     public function updateProject($data, $id)
     {
         try {
-            //update project
+            // Update project
             $project = Project::find($id);
-            //check project is exict
+            // Check if project exists
             if ($project) {
-                //return array(message, status)
                 $project->update([
                     'name' => $data['name'] ?? $project->name,
                     'description' => $data['description'] ?? $project->description,
                 ]);
-                //return array(message, status)
+                // Return array(message, status)
                 return [
-                    'message' => 'تمت عملية التحديث بنجاح',
+                    'message' => 'Project updated successfully',
                     'status' => 200,
                 ];
             } else {
-                //return array(message, status)
+                // Return array(message, status)
                 return [
-                    'message' => 'المشروع غير موجود',
+                    'message' => 'Project not found',
                     'status' => 403,
                 ];
             }
-            //exception
         } catch (Exception $e) {
-            Log::error('حدث خطأ أثناء تحديث المشروع: ' . $e->getMessage());
-            //return array(message, status)
+            Log::error('Error while updating project: ' . $e->getMessage());
+            // Return array(message, status)
             return [
-                'message' => 'حدث خطأ أثناء تحديث المشروع',
+                'message' => 'An error occurred while updating the project',
                 'status' => 500,
             ];
         }
     }
-    //**________________________________________________________________________________________________
 
     /**
-     * function  delet   project
-     * @param $id(id of project)
-     * @return array(message,status)
+     * Function created to delete a project
+     * @param int $id (id of the project)
+     * @return array(message, status)
      */
-
-    public function deletProject($id)
+    public function deleteProject($id)
     {
         try {
-            //check if project is exist
+            // Check if project exists
             $project = Project::find($id);
             if ($project) {
-                // delete project
+                // Delete project
                 $project->delete();
-                //return array(message, status)
+                // Return array(message, status)
                 return [
-                    'message' => 'تمت عملية الحذف بنجاح',
+                    'message' => 'Project deleted successfully',
                     'status' => 200,
                 ];
             } else {
-                //return array(message, status)
+                // Return array(message, status)
                 return [
-                    'message' => 'المشروع غير موجود',
+                    'message' => 'Project not found',
                     'status' => 403,
                 ];
             }
         } catch (Exception $e) {
-            Log::error('حدث خطأ أثناء الحذف المشروع: ');
-            //return array(message, status)
+            Log::error('Error while deleting project: ' . $e->getMessage());
+            // Return array(message, status)
             return [
-                'message' => 'حدث خطأ أثناء الحذف المشروع',
+                'message' => 'An error occurred while deleting the project',
                 'status' => 500,
             ];
         }
     }
-    //**________________________________________________________________________________________________
+
     /**
-     * function  show   project ith tasks an team
-     * @param $id(id of project)
-     * @return array(message,project data,status)
+     * Function created to show a project with its tasks and team
+     * @param int $id (id of the project)
+     * @return array(message, project data, status)
      */
     public function showProject($id)
     {
         try {
-
-            // Get project with taskas
+            // Get project with tasks and users
             $project = Project::with('tasks', 'users')->find($id);
             // Check if project exists
             if ($project) {
                 return [
-                    'message' => 'تمت عملية العرض بنجاح',
-                    'data' =>   $project,
+                    'message' => 'Project retrieved successfully',
+                    'data' => $project,
                     'status' => 200,
                 ];
             } else {
                 return [
-                    'message' => 'المشروع غير موجود',
-                    'data' => 'لا توجد بيانات',
+                    'message' => 'Project not found',
+                    'data' => 'No data available',
                     'status' => 403,
                 ];
             }
         } catch (Exception $e) {
-            Log::error('حدث خطأ أثناء عرض المشروع: ' . $e->getMessage());
+            Log::error('Error while retrieving project: ' . $e->getMessage());
             return [
-                'message' => 'حدث خطأ أثناء عرض المشروع'. $e->getMessage(),
-                'data' => 'لا توجد بيانات',
+                'message' => 'An error occurred while retrieving the project',
+                'data' => 'No data available',
                 'status' => 500,
             ];
         }
-
-
-
-
-
     }
 
     /**
-     * function  created to show all project related with him
-     * @param nothing
-     * @return array(message,project data,status)
+     * Function created to show all projects related to the authenticated user
+     * @return array(message, project data, status)
      */
-    public function showprojectUser()
+    public function showProjectUser()
     {
         try {
             $user = Auth::user();
-            $projects = $user->projects;
-            if(!$projects->isEmpty()) {
+            $projects = $user->projects->paginate(10);
+            if (!$projects->isEmpty()) {
                 return [
-                    'message' => 'جميع المشاريع',
+                    'message' => 'All projects retrieved successfully',
                     'data' => $projects,
                     'status' => 200,
                 ];
             } else {
                 return [
-                    'message' => 'لم يتم تعين مشاريع لك',
+                    'message' => 'No projects assigned to you',
                     'data' => [],
                     'status' => 200,
                 ];
             }
-
         } catch (Exception $e) {
-            Log::error('حدث خطأ أثناء عرض المشاريع: ' . $e->getMessage());
+            Log::error('Error while retrieving user projects: ' . $e->getMessage());
             return [
-                'message' => 'حدث خطأ أثناء عرض المشاريع',
+                'message' => 'An error occurred while retrieving projects',
                 'status' => 500,
             ];
         }

@@ -25,8 +25,10 @@ class ProjectController extends Controller
     public function index(Request $request)
     {
         $result = $this->projectService->showallProjects($request);
-        return self::paginated($result['data'], ProjectResource::class, $result['message'], $result['status']);
 
+        return $result['status'] === 200
+            ?  self::paginated($result['data'], ProjectResource::class, $result['message'], $result['status'])
+            : self::error(null, $result['message'], $result['status']);
     }
 
     /**
@@ -39,9 +41,8 @@ class ProjectController extends Controller
         $validatedData = $request->validated();
         $result = $this->projectService->createProject($validatedData);
         return $result['status'] === 200
-           ? self::success(new ProjectResource($result['data']), $result['message'], $result['status'])
-            : self::error(new ProjectResource($result['data']), $result['message'], $result['status']);
-
+            ? self::success(new ProjectResource($result['data']), $result['message'], $result['status'])
+            : self::error(null, $result['message'], $result['status']);
     }
 
     /**
@@ -52,7 +53,10 @@ class ProjectController extends Controller
     public function show(string $id)
     {
         $result = $this->projectService->showProject($id);
-        return self::success(new ProjectResource($result['data']), $result['message'], $result['status']);
+        return $result['status'] === 200
+                   ? self::success(new ProjectResource($result['data']), $result['message'], $result['status'])
+                   : self::error(null, $result['message'], $result['status']);
+
     }
 
     /**
@@ -66,7 +70,7 @@ class ProjectController extends Controller
         $validatedData = $request->validated();
         $result = $this->projectService->updateProject($validatedData, $id);
         return $result['status'] === 200
-        ? self::success(null, $result['message'], $result['status'])
+            ? self::success(null, $result['message'], $result['status'])
             : self::error(null, $result['message'], $result['status']);
     }
 
@@ -88,7 +92,8 @@ class ProjectController extends Controller
     public function showProjectUser()
     {
         $result = $this->projectService->showprojectUser();
-        return self::paginated($result['data'], ProjectResource::class, $result['message'], $result['status']);
+        return $result['status'] === 200
+            ?  self::paginated($result['data'], ProjectResource::class, $result['message'], $result['status'])
+            : self::error(null, $result['message'], $result['status']);
     }
-
 }

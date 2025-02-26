@@ -67,7 +67,7 @@
         <div class="footer">
             <p>If you did not request a password reset, please ignore this email or contact support.</p>
             <p>Thank you,</p>
-            <p>AlHussien Team</p>
+            <p> Al-Hussien-Team</p>
         </div>
     </div>
 </body>

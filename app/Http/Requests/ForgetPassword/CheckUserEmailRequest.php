@@ -9,6 +9,7 @@ use App\service\ForgetPassword\ForgetPasswordRequestService;
 
 class CheckUserEmailRequest extends FormRequest
 {
+
     protected $forgetPasswordRequestService;
     public function __construct(ForgetPasswordRequestService $forgetPasswordRequestService)
     {

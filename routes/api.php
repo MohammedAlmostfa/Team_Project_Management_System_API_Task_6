@@ -19,7 +19,7 @@ Route::controller(AuthController::class)->group(function () {
     Route::post('/refresh', 'refresh');
 });
 
-Route::get('project/{id}', [ProjectController::class, 'show'])->middleware('checkRole:user,admin');
+
 
 
 Route::group(['middleware' => ['checkRole:admin']], function () {
@@ -27,11 +27,16 @@ Route::group(['middleware' => ['checkRole:admin']], function () {
     Route::resource('/User', UserController::class);
     //return user
     Route::post('/User/{id}', [UserController::class, 'returnuser']);
+    Route::get('/showdeleted', [UserController::class, 'showDeletedUsers']);
+
+
+
     // project routs
     Route::resource('project', ProjectController::class);
+
+
     //add tam
     Route::post('Team/{id}', [TeamController::class,'store']);
-
     Route::delete('Team/{id}', [TeamController::class,'destroy']);
     // updat team
     Route::put('Team/{id}', [TeamController::class,'update']);
@@ -42,23 +47,23 @@ Route::group(['middleware' => ['checkRole:user']], function () {
     Route::get('Task/', [TaskController::class,'index']);
     // user sho all of tasks
     Route::get('Tasks/', [TaskController::class,'showtask']);
-    // update task data
-    Route::put('Task/{id}', [TaskController::class,'update']);
     // delet task
     Route::delete('Task/{id}', [TaskController::class,'destroy']);
     //show task data
     Route::get('Task/{id}', [TaskController::class,'show']);
-
     Route::get('myproject/', [ProjectController::class,'showproject']);
     // creat tasks
-    Route::group(['middleware' => ['checkUserRole:Manger']], function () {
-        Route::post('Task', [TaskController::class,'store']);
-    });
+    Route::post('Task', [TaskController::class,'store']);
+    Route::put('Task/{id}', [TaskController::class,'update']);
+
 
 });
 
 
+
 Route::middleware(['auth:api'])->group(function () {
+    Route::get('project/{id}', [ProjectController::class, 'show']);
+
     Route::post('/changePassword', [ForgetPasswordController::class, 'changePassword']);
     Route::post('/checkEmail', [ForgetPasswordController::class, 'checkEmail']);
     Route::post('/checkCode', [ForgetPasswordController::class, 'checkCode']);

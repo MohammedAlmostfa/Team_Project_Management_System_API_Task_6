@@ -1,21 +1,18 @@
 <?php
 
-namespace App\Http\Requests\Project;
+namespace App\Http\Requests\Team;
 
 use Illuminate\Foundation\Http\FormRequest;
 
 use Illuminate\Contracts\Validation\Validator;
+use Illuminate\Validation\Rule;
 
-class ProjectFormRequestCreat extends FormRequest
+class TeamFormRequestUpdate extends FormRequest
 {
     protected function failedValidation(Validator $validator)
     {
         throw new \Illuminate\Validation\ValidationException($validator, response()->json($validator->errors(), 422));
     }
-
-    /**
-     * Determine if the user is authorized to make this request.
-     */
     public function authorize(): bool
     {
         return true;
@@ -29,8 +26,13 @@ class ProjectFormRequestCreat extends FormRequest
     public function rules(): array
     {
         return [
-                'name' => 'required|string|min:4|max:25',
-                'description' => 'required|string|min:10|max:90',
+            'new_user_id' => [
+                'required',
+                'integer',
+                Rule::exists('users', 'id')->whereNull('deleted_at'),
+            ],
+
+                'old_user_id' => 'required|integer|exists:project_user,user_id',
             ];
 
     }

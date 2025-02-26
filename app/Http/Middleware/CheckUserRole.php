@@ -11,33 +11,32 @@ class CheckUserRole
 {
     public function handle(Request $request, Closure $next, $role)
     {
-
         $id = $request['project_id'];
         $project = Project::find($id);
-        // check if project exists
+
+        // Check if the project exists
         if (!$project) {
             return response()->json([
-                'message' => 'المشروع غير موجود',
-                'data' => 'لا يوجد بيانات لعرضها',
-
+                'message' => 'Project not found',
+                'data' => 'No data available',
             ], 403);
         }
+
+        // Check if the project has a team assigned
         if ($project->status == 'No team has been assigned') {
             return response()->json([
-                'message' => 'المشروع ليس له فريق بعد ',
-                'data' => 'لا يوجد بيانات لعرضها',
-
+                'message' => 'The project does not have a team yet',
+                'data' => 'No data available',
             ], 403);
         } else {
-            // check if user is afmin or manger
+            // Check if the user is an admin or the project manager
             $manager = $project->users()->wherePivot('role', 'Manager')->first();
             if ($manager->id == auth()->user()->id || auth()->user()->role == "admin") {
                 return $next($request);
             } else {
-
                 return response()->json([
-                    'message' => ' لا يمكنك اضافة مهمة فانت لست مدير المشروع ',
-                    'data' => 'لا يوجد بيانات ',
+                    'message' => 'You cannot add a task because you are not the project manager',
+                    'data' => 'No data available',
                 ], 403);
             }
         }

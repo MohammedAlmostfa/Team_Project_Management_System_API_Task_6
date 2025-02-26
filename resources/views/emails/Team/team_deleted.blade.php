@@ -70,7 +70,7 @@
         </div>
         <div class="footer">
             <p>Thank you,</p>
-            <p>The AlHussien Team</p>
+            <p> Al-Hussien-Team</p>
         </div>
     </div>
 </body>

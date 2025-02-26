@@ -2,9 +2,14 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Requests\TeamFormRequset;
 use App\Models\Project;
 use App\Service\TeamService;
+use App\Http\Resources\TeamResource;
+use Illuminate\Support\Facades\Gate;
+
+use App\Http\Requests\Team\TeamFormRequestCreat;
+use App\Http\Requests\Team\TeamFormRequestUpdate;
+use Illuminate\Auth\Access\AuthorizationException;
 
 class TeamController extends Controller
 {
@@ -15,55 +20,72 @@ class TeamController extends Controller
         $this->teamService = $teamService;
     }
 
-
     /**
-     **create team
-     **@parm TeamFormRequset request
-     **@parm id(id op project)
-     **return response()->json(message)
+     * Create a new team.
+     *
+     * @param TeamFormRequestCreate $request
+     * @param string $id
+     * @return \Illuminate\Http\JsonResponse
      */
-    public function store(TeamFormRequset $request, string $id)
+    public function store(TeamFormRequestCreat $request, string $id)
     {
-        //valdated data
+        $project = Project::findOrFail($id);
+
+        if (Gate::denies('createTeam', $project)) {
+            throw new AuthorizationException('A team has already been appointed to this project.');
+        }
+
+
         $validatedData = $request->validated();
-        //create team
         $result = $this->teamService->createTeam($validatedData, $id);
-        // return  response
-        return response()->json([
-            'message' => $result['message'],
-        ], $result['status']);
-    }
 
-
-    public function show(string $id)
-    {
+        return $result['status'] === 200
+            ? $this->success(new TeamResource($result['data']), $result['message'], $result['status'])
+            : $this->error(null, $result['message'], $result['status']);
     }
 
     /**
-     * Update the specified resource in storage.
+     * Update the specified team.
+     *
+     * @param TeamFormRequestUpdate $request
+     * @param string $id
+     * @return \Illuminate\Http\JsonResponse
      */
-    public function update(TeamFormRequset $request, string $id)
+    public function update(TeamFormRequestUpdate $request, string $id)
     {
+
+        $project = Project::findOrFail($id);
+
+        if (Gate::denies('updateTeam', $project)) {
+            throw new AuthorizationException('No team has been appointed to this project yet.');
+        }
+
         $validatedData = $request->validated();
         $result = $this->teamService->updateTeam($validatedData, $id);
-        return response()->json([
-            'message' => $result['message'],
 
-        ], $result['status']);
+        return $result['status'] === 200
+            ? $this->success(null, $result['message'], $result['status'])
+            : $this->error(null, $result['message'], $result['status']);
     }
 
-
     /**
-     **delet team
-     **@parm id(id op project)
-     **return response()->json(message)
+     * Delete the specified team.
+     *
+     * @param string $id
+     * @return \Illuminate\Http\JsonResponse
      */
-
     public function destroy(string $id)
     {
+        $project = Project::findOrFail($id);
+
+        if (Gate::denies('deleteTeam', $project)) {
+            throw new AuthorizationException('No team has been appointed to this project yet.');
+        }
+
         $result = $this->teamService->deleteTeam($id);
-        return response()->json([
-            'message' => $result['message'],
-        ], $result['status']);
+
+        return $result['status'] === 200
+            ? $this->success(null, $result['message'], $result['status'])
+            : $this->error(null, $result['message'], $result['status']);
     }
 }

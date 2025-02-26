@@ -3,53 +3,47 @@
 namespace App\Service;
 
 use App\Models\User;
-
 use Exception;
-use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Validation\ValidationException;
 
 class UserService
 {
-    //**________________________________________________________________________________________________
     /**
-     **This function is created to show all the user.
-     ** @param$ dat(email, password,name,role)
-     ** @return array(message,data[name],status)
+     * Display all users.
+     *
+     * @return array
      */
     public function showUsers()
     {
         try {
-            //get the data
             $data = User::byRole('user')->get(['id', 'name']);
-            //return data of user
             return [
-                'message' => 'بيانات المستخدمين',
+                'message' => 'Users data retrieved successfully',
                 'status' => 200,
                 'data' => $data,
             ];
         } catch (Exception $e) {
-            Log::error('Error in show all users  : ' . $e->getMessage());
+            Log::error('Error in show all users: ' . $e->getMessage());
             return [
-                'message' => 'حدث خطاء اثنا عرض المستخدمسن',
+                'message' => 'An error occurred while retrieving users',
                 'status' => 500,
-                'data' => 'لم يتم عرض البيانات'
+                'data' => 'No data available',
             ];
         }
     }
-    //**________________________________________________________________________________________________
+
     /**
-     **This function is created to store a new User.
-     ** @param$ data email, password,name,role)
-     ** @return array (message,data[name,email,role],status)
+     * Create a new user.
+     *
+     * @param array $credentials
+     * @return array
      */
     public function createUser($credentials)
     {
         try {
             $user = User::create($credentials);
-            //return $user data
             return [
-                'message' => 'نم انشاء الحساب',
+                'message' => 'User created successfully',
                 'status' => 200,
                 'data' => [
                     'name' => $credentials['name'],
@@ -57,20 +51,21 @@ class UserService
                 ],
             ];
         } catch (Exception $e) {
-            Log::error('Error in creat user  : ' . $e->getMessage());
+            Log::error('Error in creating user: ' . $e->getMessage());
             return [
-                'message' => 'حدث خطاء اثنا انشاء الحساب',
+                'message' => 'An error occurred while creating the user',
                 'status' => 500,
-                'data' => 'لم يتم عرض البيانات'
+                'data' => 'No data available',
             ];
         }
     }
-    //**________________________________________________________________________________________________
+
     /**
-     * *This function is creat to update a  user.
-     **  @param$ data (email, password,name,role)
-     **  @param $id (id of user)
-     * *@return array (message,data[name,email,role],status)
+     * Update the specified user.
+     *
+     * @param array $data
+     * @param int $id
+     * @return array
      */
     public function updateUser($data, $id)
     {
@@ -79,12 +74,11 @@ class UserService
 
             if (!$user) {
                 return [
-                    'message' => 'المستخدم غير موجود',
+                    'message' => 'User not found',
                     'status' => 404,
-                    'data' => 'لا يوجد بيانات'
+                    'data' => 'No data available',
                 ];
             } else {
-                //update user
                 $user->update([
                     'name' => $data['name'] ?? $user->name,
                     'email' => $data['email'] ?? $user->email,
@@ -92,7 +86,7 @@ class UserService
                     'role' => $data['role'] ?? $user->role,
                 ]);
                 return [
-                    'message' => 'تمت عملية التحديث',
+                    'message' => 'User updated successfully',
                     'status' => 200,
                     'data' => [
                         'name' => $user->name,
@@ -104,123 +98,147 @@ class UserService
         } catch (Exception $e) {
             Log::error('Error in updating user: ' . $e->getMessage());
             return [
-                'message' => 'حدث خطأ أثناء التحديث',
+                'message' => 'An error occurred while updating the user',
                 'status' => 500,
-                'data' => 'لم يتم تحديث البيانات'
+                'data' => 'No data available',
             ];
         }
     }
-    //**________________________________________________________________________________________________
+
     /**
-     * *This function is creat to delet  a user.
-     **@param $id (id of user)
-     * *@return  (status, data,message)
+     * Delete the specified user.
+     *
+     * @param int $id
+     * @return array
      */
     public function deletUser($id)
     {
         try {
-            // find the user
             $user = User::find($id);
+
             if (!$user) {
-                //if the user not exist
                 return [
-                    'message' => 'المستخدم غير موجود',
+                    'message' => 'User not found',
                     'status' => 404,
                 ];
             } else {
-                //delete the user
                 $user->delete();
                 return [
-                    'message' => 'تمت عملية الحذف',
+                    'message' => 'User deleted successfully',
                     'status' => 200,
                 ];
             }
         } catch (Exception $e) {
-            Log::error('Error in delet user: ' . $e->getMessage());
+            Log::error('Error in deleting user: ' . $e->getMessage());
             return [
-                'message' => 'حدث خطأ أثناء الحذف',
+                'message' => 'An error occurred while deleting the user',
                 'status' => 500,
             ];
         }
     }
 
-    //**________________________________________________________________________________________________
     /**
-     * *This function is creat to return task
-     * *@param $id(id of user)
-     **@return array(data,message,status)
+     * Restore the specified user.
+     *
+     * @param int $id
+     * @return array
      */
-
     public function returnUser($id)
     {
         try {
             $user = User::withTrashed()->find($id);
+
             if ($user) {
                 if ($user->deleted_at != "") {
                     $user->restore();
                     return [
-                        'message' => 'تم اعاد المستخدم بنجاح',
+                        'message' => 'User restored successfully',
                         'data' => $user,
                         'status' => 200,
                     ];
                 } else {
                     return [
-                        'message' => ' المستخدم  غير محذوف',
+                        'message' => 'User is not deleted',
                         'data' => $user,
                         'status' => 200,
                     ];
                 }
             } else {
                 return [
-                    'message' => ' لايوحد مستخدم',
-                    'data' => 'لايوجد بيانات',
-                    'status' => 200,
+                    'message' => 'User not found',
+                    'data' => 'No data available',
+                    'status' => 404,
                 ];
             }
         } catch (Exception $e) {
-            Log::error('Error in returning user: ' . $e->getMessage());
+            Log::error('Error in restoring user: ' . $e->getMessage());
             return [
-                'message' => 'حدث خطأ أثناءاعادة المستخدم',
+                'message' => 'An error occurred while restoring the user',
                 'status' => 500,
-                'data' => 'لا يوجد بيانات'
+                'data' => 'No data available',
             ];
         }
     }
-    //**________________________________________________________________________________________________
+
     /**
-     * *This function is creat to show  a user.
-     **@param $id(id of user)
-     * *@return ($message,status,data)
+     * Display the specified user.
+     *
+     * @param int $id
+     * @return array
      */
     public function showUser($id)
     {
-
         try {
-            //find the user
             $user = User::find($id);
 
-            if (empty($user)) {
-                //if the user not exist
+            if (!$user) {
                 return [
-                    'message' => 'المستخدم غير موجود',
+                    'message' => 'User not found',
                     'status' => 404,
-                    'data' => 'لا يوجد بيانات'
+                    'data' => 'No data available',
                 ];
             } else {
-                // rturn uuser data
                 return [
-                    'message' => 'بيانات المستخدم',
+                    'message' => 'User data retrieved successfully',
                     'data' => $user,
                     'status' => 200,
                 ];
             }
         } catch (Exception $e) {
-            Log::error('Error in show user: ' . $e->getMessage());
+            Log::error('Error in showing user: ' . $e->getMessage());
             return [
-                'message' => 'حدث خطأ أثناء العرض',
+                'message' => 'An error occurred while retrieving the user',
                 'status' => 500,
-                'data' => 'لا يوجد بيانات'
+                'data' => 'No data available',
             ];
         }
     }
+
+    /**
+     * Display a list of soft-deleted users.
+     *
+     * @return array
+     */
+    public function showDeletedUsers()
+    {
+        try {
+            // Retrieve only soft-deleted users
+            $deletedUsers = User::onlyTrashed()->get();
+
+            return [
+                'message' => 'Soft-deleted users retrieved successfully',
+                'data' => $deletedUsers,
+                'status' => 200,
+            ];
+        } catch (Exception $e) {
+            Log::error('Error in retrieving soft-deleted users: ' . $e->getMessage());
+            return [
+                'message' => 'An error occurred while retrieving soft-deleted users',
+                'data' => [],
+                'status' => 500,
+            ];
+        }
+    }
+
+
 }

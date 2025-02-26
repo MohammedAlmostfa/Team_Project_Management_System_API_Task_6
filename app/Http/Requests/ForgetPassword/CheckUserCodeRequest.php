@@ -8,6 +8,7 @@ use Illuminate\Foundation\Http\FormRequest;
 
 class CheckUserCodeRequest extends FormRequest
 {
+
     protected $forgetPasswordRequestService;
     public function __construct(ForgetPasswordRequestService $forgetPasswordRequestService)
     {

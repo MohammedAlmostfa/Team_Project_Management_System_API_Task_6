@@ -1,13 +1,15 @@
 <?php
 
-namespace App\Http\Requests;
+namespace App\Http\Requests\Task;
 
 use App\Rules\CheckUser;
 use Illuminate\Foundation\Http\FormRequest;
+
+
 use Illuminate\Contracts\Validation\Validator;
 use Carbon\Carbon;
 
-class TaskFormRequset extends FormRequest
+class TaskFormRequestCreat extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
@@ -16,7 +18,6 @@ class TaskFormRequset extends FormRequest
     {
         return true;
     }
-
     protected function failedValidation(Validator $validator)
     {
         throw new \Illuminate\Validation\ValidationException($validator, response()->json($validator->errors(), 422));
@@ -30,19 +31,24 @@ class TaskFormRequset extends FormRequest
             ]);
         }
     }
-
+    /**
+     * Get the validation rules that apply to the request.
+     *
+     * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array<mixed>|string>
+     */
     public function rules(): array
     {
 
         return [
-            'status' => 'nullable|string',
-            'priority' => 'nullable|string',
-            'title'=>'nullable|string',
-        ];
+               'title' => 'required|string',
+               'description' => 'nullable|string',
+               'status' => 'nullable|string',
+               'priority' => 'required|string',
+               'due_date' => 'required|date|after:today',
+               'project_id' => 'required|integer|exists:projects,id',
+               'user_id' => ['required', 'integer', new CheckUser($this->request->get('project_id'), $this->method())],
+           ];
 
 
     }
-
-
-
 }
